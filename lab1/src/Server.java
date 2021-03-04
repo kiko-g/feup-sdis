@@ -16,9 +16,8 @@ public class Server {
         }
 
         // attempt to parse port number
-        try {
-            port = Integer.parseInt(args[0]);
-        } catch(NumberFormatException e) {
+        port = Integer.parseInt(args[0]);
+        if(port < 0 || port > 65535) {
             System.out.println("Port specified is invalid (should be a number between 0 and 65535)");
             System.exit(-2);
         }
@@ -41,7 +40,8 @@ public class Server {
         // process requests from client
         try {
             processRequests();
-        } catch(IOException e) {
+        } 
+        catch(IOException e) {
             System.out.println("Communication with client error");
             System.exit(-4);
         }
@@ -71,8 +71,8 @@ public class Server {
 
 
     private static String generateAnswer(String request) {
-        String[] requestArgs = request.split(" "); //<operation> <DNS> (<IP>)
-        if(requestArgs.length < 2) return "-1";
+        String[] requestArgs = request.split(" "); //< operation> <DNS> (<IP>)
+        if(requestArgs.length < 2) return "-1"; // exit right away
 
         switch(requestArgs[0]) {
             case "register":
@@ -90,19 +90,17 @@ public class Server {
     }
 
 
-    // register answer
     private static String processRegister(String DNSName, String IPAddress) {
-        addressTable.put(DNSName, IPAddress);
-        System.out.println("== Updated table ===");
+        addressTable.put(DNSName, IPAddress); // register answer
+        System.out.println("== Updated table ==="); // inform about the update
         addressTable.forEach((key, value) -> System.out.println(key + "\t" + value));
 
         return String.valueOf(addressTable.size());
     }
 
-    // lookup answer
     private static String processLookup(String DNSName) {
-        String IPAddress = addressTable.get(DNSName);
-        return IPAddress == null ? "No entry" : (DNSName + " -> " + IPAddress);
+        String IPAddress = addressTable.get(DNSName); // look for answer 
+        return IPAddress != null ? (DNSName + " -> " + IPAddress) : "No entry"; // send answer
     }
 
     private static void sendAnswer(String answer, DatagramPacket packet) throws IOException {

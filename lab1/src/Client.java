@@ -29,11 +29,11 @@ public class Client {
                     System.exit(-1);
                 }
                 String IPAddress = args[4];
-                sendRegisterRequest(DNSName, IPAddress, socket);
+                requestRegister(DNSName, IPAddress, socket);
                 break;
 
             case "lookup":
-                sendLookupRequest(DNSName, socket);
+                requestLookup(DNSName, socket);
                 break;
 
             default:
@@ -43,16 +43,19 @@ public class Client {
         }
 
         // receive and log answer
-        String answer = receiveAnswer(socket);
-        System.out.println(answer);
+        System.out.println(getAnswer(socket)); 
+
+        // exit procedures
         socket.close();
     }
 
 
 
-    private static void sendRegisterRequest(String DNSName, String IPAddress, DatagramSocket socket) throws UnknownHostException {
-        String request = "register " + DNSName + " " + IPAddress; //create string for register request
-        byte[] buffer = request.getBytes();
+    private static void requestRegister(String DNSName, String IPAddress, DatagramSocket socket) throws UnknownHostException {
+        StringJoiner request = new StringJoiner(" ");
+        request.add("register").add(DNSName).add(IPAddress); //create string for register request
+
+        byte[] buffer = request.toString().getBytes();
 
         InetAddress address = InetAddress.getByName(host);
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
@@ -66,9 +69,11 @@ public class Client {
     }
 
 
-    private static void sendLookupRequest(String DNSName, DatagramSocket socket) throws UnknownHostException {
-        String request = "lookup " + DNSName; //create string for lookup request
-        byte[] buffer = request.getBytes();
+    private static void requestLookup(String DNSName, DatagramSocket socket) throws UnknownHostException {
+        StringJoiner request = new StringJoiner(" ");
+        request.add("register").add(DNSName); //create string for lookup request
+        
+        byte[] buffer = request.toString().getBytes();
 
         InetAddress address = InetAddress.getByName(host);
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
@@ -82,7 +87,7 @@ public class Client {
     }
 
 
-    private static String receiveAnswer(DatagramSocket socket) throws UnknownHostException {
+    private static String getAnswer(DatagramSocket socket) throws UnknownHostException {
         InetAddress address = InetAddress.getByName(host);
 
         byte[] buffer = new byte[1024];
