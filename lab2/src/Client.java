@@ -1,9 +1,9 @@
 import java.net.*;
+import java.util.*;
 import java.io.IOException;
-import java.util.StringJoiner;
 
 public class Client {
-    private static int port; // lookup server port number
+    private static int servicePort; // lookup server port number
     private static int multicastPort; // multicast port number
     private static String lookupAddress; // lookup server address
     private static String multicastAddress; // multicast address
@@ -11,33 +11,42 @@ public class Client {
     public static void main(String[] args) throws IOException, UnknownHostException {
         // check arguments
         if (args.length < 4) {
-            System.out.println("Wrong number of arguments");
+            System.out.println("Wrong number of arguments!\n");
             printUsage();
             System.exit(-1);
         }
 
         // parse arguments
         multicastAddress = args[0];
-        String operation = args[2];
-        String DNSName = args[3];
-        DatagramSocket socket = new DatagramSocket();
+
         try {
             multicastPort = Integer.parseInt(args[1]);
-            if(multicastPort < 0 || multicastPort > 65535) throw new NumberFormatException("Port is not between 0 and 65535");
+            if(multicastPort < 0 || multicastPort > 65535)
+                throw new NumberFormatException("Ports must be integers between 0 and 65535");
         }
         catch(NumberFormatException e) {
-            System.out.println("Ports specified must be integers between 0 and 65535");
+            e.printStackTrace();
+            System.out.println("Ports must be integers between 0 and 65535");
             System.exit(-2);
         }
 
+        String operation = args[2];
+        String DNSName = args[3];
+
+        // open socket
+        DatagramSocket socket = new DatagramSocket();
+
         // get lookup server information
-        DatagramPacket multicastPacket = getLookupServer();
+        DatagramPacket multicastPacket = getServicePortFromLookupServer();
         lookupAddress = multicastPacket.getAddress().getHostAddress();
-        port = Integer.parseInt(new String(multicastPacket.getData()).trim());
+        servicePort = Integer.parseInt(new String(multicastPacket.getData()).trim());
 
-        String message = "multicast: " + multicastAddress + " " + multicastPort + ": " + lookupAddress + " " + port;
-        System.out.println(message);
-
+        // print client request information
+        System.out.println("Multicast port: " + multicastPort);
+        System.out.println("Multicast address: " + multicastAddress);
+        System.out.println("Requested operation: " + operation);
+        System.out.println("DNS Name given: " + DNSName);
+        System.out.println("Lookup address: " + lookupAddress + "\n");
 
         // select operation
         switch(operation) {
@@ -69,10 +78,11 @@ public class Client {
     }
 
 
-    private static DatagramPacket getLookupServer() throws IOException {
+    private static DatagramPacket getServicePortFromLookupServer() throws IOException {
+        InetAddress address = InetAddress.getByName(multicastAddress); // IP address of the multicast group used by the server to advertise its service
+
         MulticastSocket multicastSocket = new MulticastSocket(multicastPort);
-        InetAddress address = InetAddress.getByName(multicastAddress);
-        multicastSocket.joinGroup(address);
+        multicastSocket.joinGroup(address); // Join the multicast group to learn the address of the socket that provides the service
 
         byte[] buffer = new byte[1024];
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
@@ -93,13 +103,14 @@ public class Client {
 
 
     private static void requestLookup(String DNSName, DatagramSocket socket) throws UnknownHostException {
+        //create buffer for lookup request
         StringJoiner request = new StringJoiner(" ");
-        request.add("lookup").add(DNSName); //create string for lookup request
+        request.add("lookup").add(DNSName);
 
         byte[] buffer = request.toString().getBytes();
 
         InetAddress address = InetAddress.getByName(lookupAddress);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, servicePort);
 
         try {
             socket.send(packet);
@@ -111,13 +122,13 @@ public class Client {
 
 
     private static void requestRegister(String DNSName, String IPAddress, DatagramSocket socket) throws UnknownHostException {
+        //create buffer for register request
         StringJoiner request = new StringJoiner(" ");
-        request.add("register").add(DNSName).add(IPAddress); //create string for register request
-
+        request.add("register").add(DNSName).add(IPAddress);
         byte[] buffer = request.toString().getBytes();
 
         InetAddress address = InetAddress.getByName(lookupAddress);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, servicePort);
 
         try {
             socket.send(packet);
@@ -133,7 +144,7 @@ public class Client {
         InetAddress address = InetAddress.getByName(lookupAddress);
 
         byte[] buffer = new byte[1024];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, servicePort);
 
         try {
             socket.setSoTimeout(5000); //5 seconds

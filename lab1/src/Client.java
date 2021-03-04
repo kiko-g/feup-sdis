@@ -1,6 +1,5 @@
 import java.net.*;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.StringJoiner;
 
 public class Client {
@@ -51,29 +50,10 @@ public class Client {
     }
 
 
-
-    private static void requestRegister(String DNSName, String IPAddress, DatagramSocket socket) throws UnknownHostException {
-        StringJoiner request = new StringJoiner(" ");
-        request.add("register").add(DNSName).add(IPAddress); //create string for register request
-
-        byte[] buffer = request.toString().getBytes();
-
-        InetAddress address = InetAddress.getByName(host);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
-
-        try {
-            socket.send(packet);
-        }
-        catch (IOException e) {
-            System.out.println("Error sending register request");
-        }
-    }
-
-
     private static void requestLookup(String DNSName, DatagramSocket socket) throws UnknownHostException {
+        //create buffer for lookup request
         StringJoiner request = new StringJoiner(" ");
-        request.add("lookup").add(DNSName); //create string for lookup request
-        
+        request.add("lookup").add(DNSName);
         byte[] buffer = request.toString().getBytes();
 
         InetAddress address = InetAddress.getByName(host);
@@ -84,6 +64,25 @@ public class Client {
         }
         catch (IOException e) {
             System.out.println("Error sending lookup request");
+        }
+    }
+
+
+
+    private static void requestRegister(String DNSName, String IPAddress, DatagramSocket socket) throws UnknownHostException {
+        //create buffer for register request
+        StringJoiner request = new StringJoiner(" ");
+        request.add("register").add(DNSName).add(IPAddress);
+        byte[] buffer = request.toString().getBytes();
+
+        InetAddress address = InetAddress.getByName(host);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
+
+        try {
+            socket.send(packet);
+        }
+        catch (IOException e) {
+            System.out.println("Error sending register request");
         }
     }
 

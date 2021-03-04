@@ -1,17 +1,17 @@
 import java.net.*;
+import java.util.*;
 import java.io.IOException;
-import java.util.StringJoiner;
 import java.util.concurrent.*;
 
 public class Server {
-    private static int port; // port number
+    private static int servicePort; // port number
     private static int multicastPort; // multicast port number
     private static String multicastAddress; // multicast address string
     private static DatagramSocket socket; // socket for communication
     private static MulticastSocket multicastSocket; // multicast socket to send server port
     private static ConcurrentHashMap<String, String> addressTable; // dns table with pairs <Name, IP>
 
-    public static void main(String[] args) throws UnknownHostException {
+    public static void main(String[] args) throws IOException {
         // check arguments
         if(args.length < 3) {
             System.out.println("Invalid number of arguments!");
@@ -20,41 +20,24 @@ public class Server {
         }
 
         // parse arguments
-        multicastAddress = args[1]; // must be between 224.0.0.0 and 239.255.255.255
+        multicastAddress = args[1]; // 224.0.0.0 to 239.255.255.255
 
         try {
-            port = Integer.parseInt(args[0]);
-            multicastPort = Integer.parseInt(args[2]);
+            servicePort = Integer.parseInt(args[0]);    // 0 to 65535
+            multicastPort = Integer.parseInt(args[2]);  // 0 to 65535
 
-            if((port < 0 || port > 65535) || (multicastPort < 0 || multicastPort > 65535))
-                if(port < 0 || port > 65535) throw new NumberFormatException("Port is not between 0 and 65535");
+            if((servicePort < 0 || servicePort> 65535) || (multicastPort < 0 || multicastPort > 65535))
+                throw new NumberFormatException("Ports must be integers between 0 and 65535");
         }
         catch(NumberFormatException e) {
-            System.out.println("Ports specified must be integers between 0 and 65535");
+            e.printStackTrace();
+            System.out.println("Ports must be integers between 0 and 65535");
             System.exit(-2);
         }
 
-
-        // attempt to open datagram socket
-        try {
-            socket = new DatagramSocket(port);
-        }
-        catch(SocketException e) {
-            e.printStackTrace();
-            System.out.println("Could not open Datagram Socket");
-            System.exit(-3);
-        }
-
-        // attempt to open multicast socket
-        try {
-            multicastSocket = new MulticastSocket(multicastPort);
-        }
-        catch(IOException e) {
-            e.printStackTrace();
-            System.out.println("Could not open Multicast Socket");
-            System.exit(-3);
-        }
-
+        // open sockets
+        socket = new DatagramSocket(servicePort);
+        multicastSocket = new MulticastSocket(multicastPort);
 
         // create dns table with dummy values
         addressTable = new ConcurrentHashMap<>();
@@ -63,21 +46,31 @@ public class Server {
         addressTable.put("www.charlie.com", "3.0.0.0");
         addressTable.put("www.delta.com", "4.0.0.0");
 
+        // get lookup server information
+        String lookupAddress = InetAddress.getLocalHost().getHostAddress();
+
+        // print client request information
+        System.out.println("Service port: " + servicePort);
+        System.out.println("Multicast port: " + multicastPort);
+        System.out.println("Multicast address: " + multicastAddress);
+        System.out.println("Lookup address: " + lookupAddress);
+
+
         // create a thread pool service to send server por periodically
         ScheduledExecutorService broadcaster = Executors.newScheduledThreadPool(5);
         broadcaster.scheduleAtFixedRate(
             () -> {
-                byte[] content = Integer.toString(port).getBytes();
+                byte[] content = Integer.toString(servicePort).getBytes();
                 try {
                     DatagramPacket multicastPacket = new DatagramPacket(content, content.length, InetAddress.getByName(multicastAddress), multicastPort);
 
-                    // build message to advertise the service periodically
+                    // build message to advertise the service on command line, periodically
                     StringJoiner message = new StringJoiner(" ");
                     message.add("multicast:")
-                        .add(multicastAddress)                               // multicast address
-                        .add(Integer.toString(multicastPort))                // multicast port
-                        .add(InetAddress.getLocalHost().getHostAddress())    // lookup address
-                        .add(Integer.toString(port));                        // service port
+                        .add(multicastAddress)
+                        .add(Integer.toString(multicastPort))
+                        .add(lookupAddress)
+                        .add(Integer.toString(servicePort));
                     System.out.println(message.toString());
 
                     multicastSocket.setTimeToLive(1);
@@ -88,7 +81,7 @@ public class Server {
                     System.out.println("Unable to send multicast");
                     System.exit(-4);
                 }
-            }, 0, 1, TimeUnit.SECONDS);
+            }, 0, 1, TimeUnit.SECONDS); // delay, period, units
 
         // listen and process requests from clients
         try {
@@ -106,6 +99,7 @@ public class Server {
         multicastSocket.close();
     }
 
+
     private static void processRequests() throws IOException {
         byte[] data = new byte[512];
         DatagramPacket packet = new DatagramPacket(data, data.length);
@@ -115,7 +109,7 @@ public class Server {
             socket.receive(packet);
 
             String request = new String(packet.getData());
-            System.out.println("Server: " + request.trim());
+            System.out.println("\nServer: " + request.trim());
 
             String answer = generateAnswer(request.trim());
             sendAnswer(answer, packet);
@@ -150,7 +144,7 @@ public class Server {
         addressTable.put(DNSName, IPAddress); // register
 
         // inform about the register update
-        System.out.println("== Updated table ===");
+        System.out.println("============ Updated table ============");
         addressTable.forEach((key, value) -> System.out.println(key + "\t" + value));
 
         return String.valueOf(addressTable.size()); //send answer
@@ -175,6 +169,6 @@ public class Server {
         System.out.println("Follow this format:");
         System.out.println("<Service Port> <Multicast Address> <Multicast Port>\n");
         System.out.println("Examples:");
-        System.out.println("8000 224.0.0.0 80");
+        System.out.println("1234 224.0.0.0 80");
     }
 }

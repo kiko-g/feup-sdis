@@ -6,6 +6,13 @@ Distributed Systems Course
 
 Lab classes implementations
 
+| Index | Description                             |
+| :---: | :-------------------------------------- |
+|   1   | Programming with Sockets                |
+|   2   | Same as Lab1 but with Multicast Sockets |
+
+---
+
 ## Project 1
 
 Project 1 description

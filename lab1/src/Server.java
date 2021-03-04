@@ -3,7 +3,6 @@ import java.util.HashMap;
 import java.io.IOException;
 
 public class Server {
-    private static int port; // port number
     private static DatagramSocket socket; // socket for communication between server and client
     private static HashMap<String, String> addressTable; // dns table with pairs <Name, IP>
 
@@ -16,8 +15,9 @@ public class Server {
         }
 
         // attempt to parse port number
-        port = Integer.parseInt(args[0]);
-        if(port < 0 || port > 65535) {
+        // port number
+        int port = Integer.parseInt(args[0]);
+        if(port< 0 || port> 65535) {
             System.out.println("Port specified is invalid (should be a number between 0 and 65535)");
             System.exit(-2);
         }
