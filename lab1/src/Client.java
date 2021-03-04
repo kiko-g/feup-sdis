@@ -1,6 +1,7 @@
 import java.net.*;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.StringJoiner;
 
 public class Client {
     private static int port; // port number
@@ -71,7 +72,7 @@ public class Client {
 
     private static void requestLookup(String DNSName, DatagramSocket socket) throws UnknownHostException {
         StringJoiner request = new StringJoiner(" ");
-        request.add("register").add(DNSName); //create string for lookup request
+        request.add("lookup").add(DNSName); //create string for lookup request
         
         byte[] buffer = request.toString().getBytes();
 
