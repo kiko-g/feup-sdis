@@ -4,7 +4,7 @@ import java.io.IOException;
 
 public class Server {
     private static DatagramSocket socket; // socket for communication between server and client
-    private static HashMap<String, String> addressTable; // dns table with pairs <Name, IP>
+    private static HashMap<String, String> DNSTable; // dns table with pairs <DNS, IP>
 
     public static void main(String[] args) {
         // check arguments
@@ -31,11 +31,11 @@ public class Server {
         }
 
         // create dns table with dummy values
-        addressTable = new HashMap<>();
-        addressTable.put("www.alpha.com", "1.0.0.0");
-        addressTable.put("www.beta.com", "2.0.0.0");
-        addressTable.put("www.charlie.com", "3.0.0.0");
-        addressTable.put("www.delta.com", "4.0.0.0");
+        DNSTable = new HashMap<>();
+        DNSTable.put("www.alpha.com", "1.0.0.0");
+        DNSTable.put("www.beta.com", "2.0.0.0");
+        DNSTable.put("www.charlie.com", "3.0.0.0");
+        DNSTable.put("www.delta.com", "4.0.0.0");
 
         // process requests from client
         try {
@@ -61,8 +61,8 @@ public class Server {
             String request = new String(packet.getData());
             System.out.println("Server: " + request.trim());
 
-            String answer = generateAnswer(request.trim());
-            sendAnswer(answer, packet);
+            String reply = generateReply(request.trim());
+            sendReply(reply, packet);
 
             byte[] buffer = new byte[512];
             packet.setData(buffer);
@@ -70,7 +70,7 @@ public class Server {
     }
 
 
-    private static String generateAnswer(String request) {
+    private static String generateReply(String request) {
         String[] requestArgs = request.split(" "); //< operation> <DNS> (<IP>)
         if(requestArgs.length < 2) return "-1"; // exit right away
 
@@ -89,22 +89,25 @@ public class Server {
         }
     }
 
+    private static void showDNSTable() {
+        System.out.println("\n============ Updated table ============");
+        DNSTable.forEach((key, value) -> System.out.println(key + "\t" + value));
+    }
 
     private static String processRegister(String DNSName, String IPAddress) {
-        addressTable.put(DNSName, IPAddress); // register answer
-        System.out.println("== Updated table ==="); // inform about the update
-        addressTable.forEach((key, value) -> System.out.println(key + "\t" + value));
-
-        return String.valueOf(addressTable.size());
+        DNSTable.put(DNSName, IPAddress); // register reply
+        showDNSTable();
+        
+        return String.valueOf(DNSTable.size());
     }
 
     private static String processLookup(String DNSName) {
-        String IPAddress = addressTable.get(DNSName); // look for answer 
-        return IPAddress != null ? (DNSName + " -> " + IPAddress) : "No entry"; // send answer
+        String IPAddress = DNSTable.get(DNSName); // look for reply 
+        return IPAddress != null ? (DNSName + " -> " + IPAddress) : "No entry"; // send reply
     }
 
-    private static void sendAnswer(String answer, DatagramPacket packet) throws IOException {
-        packet.setData(answer.getBytes());
+    private static void sendReply(String reply, DatagramPacket packet) throws IOException {
+        packet.setData(reply.getBytes());
         socket.send(packet);
     }
 

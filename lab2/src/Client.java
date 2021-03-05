@@ -70,8 +70,8 @@ public class Client {
                 System.exit(-2);
         }
 
-        // receive and log answer
-        System.out.println(getAnswer(socket));
+        // receive and log reply
+        System.out.println(getServerReply(socket));
 
         // exit procedures
         socket.close();
@@ -140,7 +140,7 @@ public class Client {
 
 
 
-    private static String getAnswer(DatagramSocket socket) throws UnknownHostException {
+    private static String getServerReply(DatagramSocket socket) throws UnknownHostException {
         InetAddress address = InetAddress.getByName(lookupAddress);
 
         byte[] buffer = new byte[1024];
@@ -151,7 +151,7 @@ public class Client {
             socket.receive(packet);
         }
         catch (IOException e) {
-            System.out.println("Error when trying to receive answer");
+            System.out.println("Error when trying to receive reply");
         }
 
         return new String(packet.getData());
