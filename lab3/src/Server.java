@@ -18,8 +18,8 @@ public class Server {
             RemoteObject remoteObject = new RemoteObject();
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(remoteObject, 4455);
 
-            Registry RMIRegistry = LocateRegistry.createRegistry(1099);
-            RMIRegistry.bind(remoteObjectName, stub);
+            Registry registry = LocateRegistry.createRegistry(1099); // locate codebase
+            registry.bind(remoteObjectName, stub);
         }
         catch(AlreadyBoundException e) {
             e.printStackTrace();
