@@ -1,0 +1,14 @@
+# Output
+out
+build
+bin
+*.class
+
+# Config
+.idea
+*.iml
+
+# Folders
+storage/peer*/
+
+src/peer_*/

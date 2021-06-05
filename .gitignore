@@ -1,6 +1,11 @@
-Images
+# Folders
 out
-Projects
-extra
+build
+bin
+gitlab
+
+# File types
+*.txt
+*.class
 .idea
 *.iml
